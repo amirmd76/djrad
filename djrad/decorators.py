@@ -2,6 +2,7 @@ import json
 from functools import wraps
 
 from django.http import JsonResponse
+from django.utils.translation import ugettext_lazy as _
 
 from djrad import types
 from . import consts
@@ -11,7 +12,7 @@ from .exceptions import APIException
 def _check_method(request, method):
     if request.method != method:
         raise APIException(
-            message="invalid method, use {} instead".format(method),
+            message=_("invalid method, use {} instead").format(method),
             status=405
         )
 
@@ -30,7 +31,7 @@ def _check_required_params(data, required_params):
     for param in required_params:
         item = data.get(param)
         if not item:
-            raise APIException(message="{} required".format(param), status=400, error_code=400)
+            raise APIException(message=_("{} required").format(param), status=400, error_code=400)
 
 
 def _check_params(params, required_params, param_types):
@@ -53,7 +54,7 @@ def _check_param_types(data, param_types):
         if not item:
             continue
         if not types.validate(item, value):
-            raise APIException('{} is not a valid {}'.format(key, types.VERBOSE_TYPES[value]), status=400, error_code=400)
+            raise APIException(_("{} is not a valid {}").format(key, types.VERBOSE_TYPES[value]), status=400, error_code=400)
 
 
 def api(method="GET", params=None, required_params=None, param_types=None, required_files=None):
