@@ -2,6 +2,7 @@ import json
 import re
 
 INTEGER = "int"
+FLOAT = "float"
 BOOLEAN = "bool"
 STRING = "str"
 EMAIL = "email"
@@ -11,16 +12,6 @@ STD = "std"
 JSON = "json"
 LIST = "list"
 DICT = "dict"
-
-
-def validate_integer(value):
-    if not isinstance(value, int):
-        raise ValueError('Not an integer')
-
-
-def validate_boolean(value):
-    if not isinstance(value, bool):
-        raise ValueError('Not a boolean')
 
 
 def validate_string(value):
@@ -64,26 +55,20 @@ def validate_json(value):
         raise ValueError("Not a JSON")
 
 
-def validate_list(value):
-    if not isinstance(value, list):
-        raise ValueError('Not an list')
-
-
-def validate_dict(value):
-    if not isinstance(value, dict):
-        raise ValueError('not a dictionary')
-
-ALLOWED_TYPES = {INTEGER: validate_integer,  BOOLEAN: validate_boolean, STRING: validate_string, EMAIL: validate_email, ALPHA: validate_alpha,
-                 ALPHANUMERIC: validate_alphanumeric, STD: validate_standard_string, JSON: validate_json, LIST: validate_list, DICT: validate_dict}
+ALLOWED_TYPES = {INTEGER: int, FLOAT: float, BOOLEAN: bool, STRING: validate_string, EMAIL: validate_email, ALPHA: validate_alpha,
+                 ALPHANUMERIC: validate_alphanumeric, STD: validate_standard_string, JSON: validate_json, LIST: list, DICT: dict}
 
 
 VERBOSE_TYPES = {INTEGER: "integer", BOOLEAN: "boolean", STRING: "string", EMAIL: "email", ALPHA: "alphabetic string",
                  ALPHANUMERIC: "alphanumeric string", STD: "standard string", JSON: "JSON", LIST: "list", DICT: "dictionary"}
 
 
-def validate(value, type):
+def validate(value, expected_type):
     try:
-        ALLOWED_TYPES[type](value)
-        return True
+        allowed_type = ALLOWED_TYPES[expected_type](value)
+        if isinstance(allowed_type, type):
+            return isinstance(value, allowed_type)
+        else:
+            allowed_type(value)
     except:
         return False
