@@ -56,9 +56,10 @@ def _check_param_types(data, param_types):
             raise APIException('{} is not a valid {}'.format(key, types.VERBOSE_TYPES[value]), status=400, error_code=400)
 
 
-def api(method="GET", params=None, required_params=None, param_types=None):
+def api(method="GET", params=None, required_params=None, param_types=None, required_files=None):
     params = [] if not params else params
     required_params = [] if not required_params else required_params
+    required_files = [] if not required_files else required_files
     param_types = {} if not param_types else param_types
     _check_params(params, required_params, param_types)
 
@@ -72,6 +73,7 @@ def api(method="GET", params=None, required_params=None, param_types=None):
                 request.data = data
 
                 _check_required_params(data, required_params)
+                _check_required_params(request.FILES, required_files)
                 _check_param_types(data, param_types)
 
                 result_params = {}
