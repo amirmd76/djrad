@@ -93,7 +93,10 @@ def api(method="GET", params=None, required_params=None, param_types=None, requi
             except APIException as api_exception:
                 return JsonResponse({
                     consts.RESULT: consts.ERROR,
-                    consts.MESSAGE: api_exception.message,
+                    consts.ERROR: {
+                        consts.CODE: api_exception.error_code,
+                        consts.MESSAGE: api_exception.message,
+                    }
                 }, status=api_exception.status)
 
         return wrapped
