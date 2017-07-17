@@ -3,6 +3,7 @@ from functools import wraps
 
 from django.http import JsonResponse
 from django.utils.translation import ugettext_lazy as _
+from django.views.decorators.csrf import csrf_exempt
 
 from djrad import types
 from . import consts
@@ -18,12 +19,14 @@ def _check_method(request, method):
 
 
 def _get_data(request):
+    data = {}
     if request.method == "POST":
-        data = json.loads(request.body)
+        try:
+            data = json.loads(request.body)
+        except ValueError:
+            pass
     elif request.method == "GET":
         data = request.GET.copy()
-    else:
-        data = {}
     return data
 
 
@@ -66,6 +69,7 @@ def api(method="GET", params=None, required_params=None, param_types=None, requi
 
     def func(f):
         @wraps(func)
+        @csrf_exempt
         def wrapped(request, *args, **kwargs):
             try:
                 _check_method(request, method)
@@ -107,6 +111,7 @@ def api(method="GET", params=None, required_params=None, param_types=None, requi
 def json_rpc():
     def func(f):
         @wraps(func)
+        @csrf_exempt
         def wrapped(request, *args, **kwargs):
             try:
                 r = f(request, *args, **kwargs) or {}
