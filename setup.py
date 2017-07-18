@@ -9,7 +9,7 @@ with open('LICENSE') as f:
 
 setup(
     name='djrad',
-    version='0.0.5',
+    version='0.0.6',
     description='Decorators for JSONRPC and REST API on django',
     long_description=readme,
     author='Divar submit team',

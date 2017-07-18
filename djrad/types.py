@@ -64,11 +64,14 @@ VERBOSE_TYPES = {INTEGER: "integer", BOOLEAN: "boolean", STRING: "string", EMAIL
 
 
 def validate(value, expected_type):
-    try:
-        allowed_type = ALLOWED_TYPES[expected_type](value)
-        if isinstance(allowed_type, type):
-            return isinstance(value, allowed_type)
-        else:
+    if isinstance(expected_type, type):
+        return isinstance(value, expected_type)
+    allowed_type = ALLOWED_TYPES[expected_type]
+    if isinstance(allowed_type, type):
+        return isinstance(value, allowed_type)
+    else:
+        try:
             allowed_type(value)
-    except:
-        return False
+            return True
+        except ValueError:
+            return False
