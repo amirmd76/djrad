@@ -67,12 +67,12 @@ def _extract_required_and_type(param):
         else:
             return False, param[1]
     is_bool = [False, False]
-    for i in range(1, 2):
+    for i in range(1, 3):
         if isinstance(param[i], bool):
             is_bool[i-1] = True
     if not (is_bool[0] ^ is_bool[1]):
         raise ValueError("Exactly one of param[1] and param[2] should be boolean (required)")
-    for i in range(1, 2):
+    for i in range(1, 3):
         if is_bool[i-1]:
             return param[i], param[3-i]
 
