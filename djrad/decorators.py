@@ -6,8 +6,10 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 
 from djrad import types
-from . import consts
-from .exceptions import APIException
+from djrad.json_schema import validate_schema, validate_params
+from djrad import consts
+from djrad.exceptions import APIException
+from djrad.types import FILE
 
 
 def _check_method(request, method):
@@ -30,16 +32,19 @@ def _get_data(request):
     return data
 
 
-def _check_required_params(data, required_params):
-    for param in required_params:
+def _check_required_files(data, required_files):
+    errors = {}
+    for param in required_files:
         item = data.get(param)
         if not item:
-            raise APIException(message=_("{} required").format(param), status=400, error_code=400)
+            errors[param] = 'required'
+
+    return errors
 
 
 def _check_params(params, required_params, param_types):
     for param in required_params:
-        if not param in params:
+        if param not in params:
             raise ValueError('required_params should be a subset of params')
 
     for key in param_types:
@@ -48,16 +53,68 @@ def _check_params(params, required_params, param_types):
 
     for key, value in param_types.items():
         if value not in types.ALLOWED_TYPES:
-            raise ValueError("unknown type {}".format(value))
+            validate_schema(value)
 
 
-def _check_param_types(data, param_types):
-    for key, value in param_types.items():
-        item = data.get(key)
-        if not item:
-            continue
-        if not types.validate(item, value):
-            raise APIException(_("{} is not a valid {}").format(key, types.VERBOSE_TYPES[value]), status=400, error_code=400)
+def _extract_required_and_type(param):
+    if len(param) > 3:
+        raise ValueError("Param len should be at most 3")
+    if len(param) == 1:
+        return False, None
+    if len(param) == 2:
+        if isinstance(param[1], bool):
+            return param[1], None
+        else:
+            return False, param[1]
+    is_bool = [False, False]
+    for i in range(1, 2):
+        if isinstance(param[i], bool):
+            is_bool[i-1] = True
+    if not (is_bool[0] ^ is_bool[1]):
+        raise ValueError("Exactly one of param[1] and param[2] should be boolean (required)")
+    for i in range(1, 2):
+        if is_bool[i-1]:
+            return param[i], param[3-i]
+
+
+def _extract_params(raw_params):
+    params = []
+    required_params = []
+    param_types = {}
+    required_files = []
+    files = []
+
+    if raw_params:
+        for raw_param in raw_params:
+            if not isinstance(raw_param, tuple):
+                params.append(raw_param)
+            else:
+                if len(raw_param) < 1:
+                    raise ValueError("param can not be empty")
+                else:
+                    param_name = raw_param[0]
+                    required, expected_type = _extract_required_and_type(raw_param)
+                    if expected_type == FILE:
+                        files.append(param_name)
+                        if required:
+                            required_files.append(param_name)
+                        continue
+                    params.append(param_name)
+                    if required:
+                        required_params.append(param_name)
+                    if expected_type:
+                        param_types[param_name] = expected_type
+
+    return params, files, required_params, param_types, required_files
+
+
+def _check_data(required_params, param_types, required_files, data, files):
+    errors = {}
+    errors.update(_check_required_files(files, required_files))
+    dict_data = dict(data)
+    errors.update(validate_params(required_params, param_types, dict_data))
+
+    return errors
 
 
 def api(method="GET", params=None, required_params=None, param_types=None, required_files=None):
@@ -77,13 +134,69 @@ def api(method="GET", params=None, required_params=None, param_types=None, requi
                 data = _get_data(request)
                 request.data = data
 
-                _check_required_params(data, required_params)
-                _check_required_params(request.FILES, required_files)
-                _check_param_types(data, param_types)
+                errors = _check_data(required_params, param_types, required_files, data, request.FILES)
+                if errors:
+                    return JsonResponse({
+                        consts.RESULT: consts.ERROR,
+                        consts.ERROR: errors
+                    }, status=400)
 
                 result_params = {}
                 for param in params:
                     result_params[param] = data.get(param, None)
+
+                new_kwargs = kwargs.copy()
+                new_kwargs.update(result_params)
+
+                r = f(request, *args, **new_kwargs) or {}
+
+                result = {consts.RESULT: consts.SUCCESS}
+                result.update(r)
+                return JsonResponse(result)
+
+            except APIException as api_exception:
+                return JsonResponse({
+                    consts.RESULT: consts.ERROR,
+                    consts.ERROR: {
+                        consts.CODE: api_exception.error_code,
+                        consts.MESSAGE: api_exception.message,
+                    }
+                }, status=api_exception.status)
+
+        return wrapped
+
+    return func
+
+
+def rest_api(method="GET", params=None):
+    raw_params = params
+
+    params, files, required_params, param_types, required_files = _extract_params(raw_params)
+    _check_params(params, required_params, param_types)
+
+    def func(f):
+        @wraps(func)
+        @csrf_exempt
+        def wrapped(request, *args, **kwargs):
+            try:
+                _check_method(request, method)
+
+                data = _get_data(request)
+                request.data = data
+
+                errors = _check_data(required_params, param_types, required_files, data, request.FILES)
+                if errors:
+                    return JsonResponse({
+                        consts.RESULT: consts.ERROR,
+                        consts.ERROR: errors
+                    }, status=400)
+
+                result_params = {}
+                for param in params:
+                    result_params[param] = data.get(param, None)
+
+                for param in files:
+                    result_params[param] = request.FILES.get(param, None)
 
                 new_kwargs = kwargs.copy()
                 new_kwargs.update(result_params)
