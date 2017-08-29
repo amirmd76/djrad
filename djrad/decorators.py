@@ -137,10 +137,11 @@ def api(allowed_methods=[], params=None, required_params=None, param_types=None,
             try:
                 _check_method(request, allowed_methods)
 
-                data = _get_data(request)
-                request.data = data
+                if not hasattr(request, 'data'):
+                    data = _get_data(request)
+                    request.data = data
 
-                errors = _check_data(required_params, param_types, required_files, data, request.FILES)
+                errors = _check_data(required_params, param_types, required_files, request.data, request.FILES)
                 if errors:
                     return JsonResponse({
                         consts.RESULT: consts.ERROR,
@@ -188,10 +189,11 @@ def rest_api(allowed_methods=None, params=None):
             try:
                 _check_method(request, allowed_methods)
 
-                data = _get_data(request)
-                request.data = data
+                if not hasattr(request, 'data'):
+                    data = _get_data(request)
+                    request.data = data
 
-                errors = _check_data(required_params, param_types, required_files, data, request.FILES)
+                errors = _check_data(required_params, param_types, required_files, request.data, request.FILES)
                 if errors:
                     return JsonResponse({
                         consts.RESULT: consts.ERROR,
