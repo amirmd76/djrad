@@ -12,10 +12,16 @@ from djrad.exceptions import APIException
 from djrad.types import FILE
 
 
-def _check_method(request, method):
-    if request.method != method:
+def _check_method(request, allowed_methods):
+    if allowed_methods == []:
+        return
+
+    if allowed_methods is None:
+        allowed_methods = ["GET"]
+
+    if not request.method in allowed_methods:
         raise APIException(
-            message=_("invalid method, use {} instead").format(method),
+            message=_("invalid method, use {} instead").format(allowed_methods),
             status=405
         )
 
@@ -117,7 +123,7 @@ def _check_data(required_params, param_types, required_files, data, files):
     return errors
 
 
-def api(method="GET", params=None, required_params=None, param_types=None, required_files=None):
+def api(allowed_methods=[], params=None, required_params=None, param_types=None, required_files=None):
     params = [] if not params else params
     required_params = [] if not required_params else required_params
     required_files = [] if not required_files else required_files
@@ -129,7 +135,7 @@ def api(method="GET", params=None, required_params=None, param_types=None, requi
         @csrf_exempt
         def wrapped(request, *args, **kwargs):
             try:
-                _check_method(request, method)
+                _check_method(request, allowed_methods)
 
                 data = _get_data(request)
                 request.data = data
@@ -168,10 +174,11 @@ def api(method="GET", params=None, required_params=None, param_types=None, requi
     return func
 
 
-def rest_api(method="GET", params=None):
+def rest_api(allowed_methods=None, params=None):
     raw_params = params
 
     params, files, required_params, param_types, required_files = _extract_params(raw_params)
+
     _check_params(params, required_params, param_types)
 
     def func(f):
@@ -179,7 +186,7 @@ def rest_api(method="GET", params=None):
         @csrf_exempt
         def wrapped(request, *args, **kwargs):
             try:
-                _check_method(request, method)
+                _check_method(request, allowed_methods)
 
                 data = _get_data(request)
                 request.data = data
