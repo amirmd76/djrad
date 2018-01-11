@@ -199,7 +199,7 @@ def rest_api(allowed_methods=None, params=None, useJsonSchema=True):
                 if not hasattr(request, 'data'):
                     data = _get_data(request)
                     request.data = data
-                if(useJsonSchema)
+                if(useJsonSchema):
                     errors = _check_data(required_params, param_types, required_files, request.data, request.FILES)
                 else:
                     errors = _check_data_nojs(required_params, param_types, required_files, request.data, request.FILES)
