@@ -30,7 +30,7 @@ def _get_data(request):
     data = {}
     if request.method == "POST":
         try:
-            data = json.loads(str(request.body))
+            data = json.loads(str(request.body, 'utf-8'))
         except ValueError:
             pass
     elif request.method == "GET":
