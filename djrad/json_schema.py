@@ -43,13 +43,20 @@ def validate_params(required_params, param_types, data):
     schema = get_schema(required_params, param_types)
     return validate(schema, data)
 
+
 def validate_params_nojs(required_params, param_types, data):
+    errors = {}
     for key, value in param_types.items():
         req = []
-        if(key in required_params):
+        if key in required_params:
             req = [key]
-        schema = get_schema(req, {key:value})
-    return validate(schema, data)
+        schema = get_schema(req, {key: value})
+        if validate(schema, {key: data.get(key, None)}):
+            if req and (data.get(key, None) is None):
+                errors.update({key: "Required"})
+            else:
+                errors.update({key: "Not a valid {}".format(value)})
+    return errors
 
 
 def validate_schema(schema):
