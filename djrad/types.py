@@ -11,6 +11,6 @@ DICT = "dict"
 FILE = "file"
 
 ALLOWED_TYPES = {INTEGER: {"type": "integer"}, FLOAT: {"type": "number"}, BOOLEAN: {"type": "boolean"}, STRING: {"type": "string"},
-                 EMAIL: {"type": "string", "format": "email"}, ALPHA: {"type": "string", "pattern": r"^[a-zA-Z]+$"},
+                 EMAIL: {"type": "string", "format": "emaili", "pattern": "[^@]+@[^@]+\.[^@]+"}, ALPHA: {"type": "string", "pattern": r"^[a-zA-Z]+$"},
                  ALPHANUMERIC: {"type": "string", "pattern": r"^[a-zA-Z0-9]+$"}, STD: {"type": "string", "pattern": r"^[a-zA-Z0-9_]+$"},
                  LIST: {"type": "array"}, DICT: {"type": "object"}}
