@@ -43,6 +43,14 @@ def validate_params(required_params, param_types, data):
     schema = get_schema(required_params, param_types)
     return validate(schema, data)
 
+def validate_params_nojs(required_params, param_types, data):
+    for key, value in param_types.items():
+        req = []
+        if(key in required_params):
+            req = [key]
+        schema = get_schema(req, {key:value})
+    return validate(schema, data)
+
 
 def validate_schema(schema):
     meta = Draft4Validator.META_SCHEMA.copy()

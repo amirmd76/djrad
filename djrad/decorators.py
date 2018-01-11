@@ -6,7 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 
 from djrad import types
-from djrad.json_schema import validate_schema, validate_params
+from djrad.json_schema import validate_schema, validate_params, validate_params_noj
 from djrad import consts
 from djrad.exceptions import APIException
 from djrad.types import FILE
@@ -122,6 +122,13 @@ def _check_data(required_params, param_types, required_files, data, files):
 
     return errors
 
+def _check_data_nojs(required_params, param_types, required_files, data, files):
+    errors = {}
+    errors.update(_check_required_files(files, required_files))
+    dict_data = dict(data)
+    errors.update(validate_params_nojs(required_params, param_types, dict_data))
+    return errors
+
 
 def api(allowed_methods=[], params=None, required_params=None, param_types=None, required_files=None):
     params = [] if not params else params
@@ -175,7 +182,7 @@ def api(allowed_methods=[], params=None, required_params=None, param_types=None,
     return func
 
 
-def rest_api(allowed_methods=None, params=None):
+def rest_api(allowed_methods=None, params=None, useJsonSchema=True):
     raw_params = params
 
     params, files, required_params, param_types, required_files = _extract_params(raw_params)
@@ -192,8 +199,10 @@ def rest_api(allowed_methods=None, params=None):
                 if not hasattr(request, 'data'):
                     data = _get_data(request)
                     request.data = data
-
-                errors = _check_data(required_params, param_types, required_files, request.data, request.FILES)
+                if(useJsonSchema)
+                    errors = _check_data(required_params, param_types, required_files, request.data, request.FILES)
+                else:
+                    errors = _check_data_nojs(required_params, param_types, required_files, request.data, request.FILES)
                 if errors:
                     return JsonResponse({
                         consts.RESULT: consts.ERROR,
