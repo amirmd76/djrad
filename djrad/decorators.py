@@ -6,7 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 
 from djrad import types
-from djrad.json_schema import validate_schema, validate_params, validate_params_noj
+from djrad.json_schema import validate_schema, validate_params, validate_params_nojs
 from djrad import consts
 from djrad.exceptions import APIException
 from djrad.types import FILE
