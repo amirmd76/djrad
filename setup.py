@@ -4,7 +4,7 @@ readme = "Django-JSONRPC-REST-API-Decorators (DJRAD)"
 
 setup(
     name='djrad',
-    version='1.2.0',
+    version='1.2.1',
     description='Decorators for JSONRPC and REST API on django',
     long_description=readme,
     author='Divar submit team',

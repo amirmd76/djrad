@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from djrad import types
 from djrad.json_schema import validate_schema, validate_params, validate_params_nojs
 from djrad import consts
-from djrad.exceptions import APIException
+from djrad.exceptions import APIException, APIValidationException
 from djrad.types import FILE
 
 
@@ -232,6 +232,12 @@ def rest_api(allowed_methods=None, params=None, useJsonSchema=True):
                         consts.CODE: api_exception.error_code,
                         consts.MESSAGE: api_exception.message,
                     }
+                }, status=api_exception.status)
+
+            except APIValidationException as api_exception:
+                return JsonResponse({
+                    consts.RESULT: consts.ERROR,
+                    consts.ERROR: api_exception.error
                 }, status=api_exception.status)
 
         return wrapped
