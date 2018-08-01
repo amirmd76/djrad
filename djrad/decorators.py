@@ -34,7 +34,12 @@ def _get_data(request):
         except ValueError:
             pass
     elif request.method == "GET":
-        data = request.GET.copy()
+        old_data = request.GET.copy()
+        for k, v in dict(old_data).items():
+            if isinstance(v, list) and len(v) == 1:
+                data[k] = v[0]
+            else:
+                data[k] = v
     return data
 
 
@@ -122,6 +127,7 @@ def _check_data(required_params, param_types, required_files, data, files):
 
     return errors
 
+
 def _check_data_nojs(required_params, param_types, required_files, data, files):
     errors = {}
     errors.update(_check_required_files(files, required_files))
@@ -182,7 +188,7 @@ def api(allowed_methods=[], params=None, required_params=None, param_types=None,
     return func
 
 
-def rest_api(allowed_methods=None, params=None, useJsonSchema=True):
+def rest_api(allowed_methods=None, params=None, useJsonSchema=True, no_result_on_success=False):
     raw_params = params
 
     params, files, required_params, param_types, required_files = _extract_params(raw_params)
@@ -221,8 +227,9 @@ def rest_api(allowed_methods=None, params=None, useJsonSchema=True):
 
                 r = f(request, *args, **new_kwargs) or {}
 
-                result = {consts.RESULT: consts.SUCCESS}
-                result.update(r)
+                result = r
+                if not no_result_on_success:
+                    result.update({consts.RESULT: consts.SUCCESS})
                 return JsonResponse(result)
 
             except APIException as api_exception:

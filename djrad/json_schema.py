@@ -29,7 +29,6 @@ def validate(schema, value):
         result_errors[key] = value.message
 
     for key in tree:
-        print(key, tree[key].errors)
         errors = {}
         for error in tree[key].errors:
             errors[error] = tree[key].errors[error].message
