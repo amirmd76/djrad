@@ -144,7 +144,7 @@ def api(allowed_methods=[], params=None, required_params=None, param_types=None,
     _check_params(params, required_params, param_types)
 
     def func(f):
-        @wraps(func)
+        @wraps(f)
         @csrf_exempt
         def wrapped(request, *args, **kwargs):
             try:
@@ -196,7 +196,7 @@ def rest_api(allowed_methods=None, params=None, useJsonSchema=True, no_result_on
     _check_params(params, required_params, param_types)
 
     def func(f):
-        @wraps(func)
+        @wraps(f)
         @csrf_exempt
         def wrapped(request, *args, **kwargs):
             try:
@@ -254,7 +254,7 @@ def rest_api(allowed_methods=None, params=None, useJsonSchema=True, no_result_on
 
 def json_rpc():
     def func(f):
-        @wraps(func)
+        @wraps(f)
         @csrf_exempt
         def wrapped(request, *args, **kwargs):
             try:
