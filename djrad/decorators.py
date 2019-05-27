@@ -1,7 +1,7 @@
 import json
 from functools import wraps
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 
@@ -240,6 +240,8 @@ def rest_api(allowed_methods=None, params=None, header_params=None, use_json_sch
 
                 r = f(request, *args, **new_kwargs) or {}
 
+                if isinstance(r, HttpResponse):
+                    return r
                 result = r
                 if not no_result_on_success:
                     result.update({consts.RESULT: consts.SUCCESS})
