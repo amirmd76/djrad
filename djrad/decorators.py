@@ -188,12 +188,18 @@ def api(allowed_methods=[], params=None, required_params=None, param_types=None,
     return func
 
 
-def rest_api(allowed_methods=None, params=None, useJsonSchema=True, no_result_on_success=False):
+def rest_api(allowed_methods=None, params=None, header_params=None, use_json_schema=True, no_result_on_success=False):
     raw_params = params
+    raw_header_params = header_params
 
     params, files, required_params, param_types, required_files = _extract_params(raw_params)
+    header_params, header_file, header_required_params, header_param_types, \
+        header_required_files = _extract_params(raw_header_params)
+    if header_file:
+        raise Exception("headers can't have files")
 
     _check_params(params, required_params, param_types)
+    _check_params(header_params, header_required_params, header_param_types)
 
     def func(f):
         @wraps(f)
@@ -205,10 +211,14 @@ def rest_api(allowed_methods=None, params=None, useJsonSchema=True, no_result_on
                 if not hasattr(request, 'data'):
                     data = _get_data(request)
                     request.data = data
-                if(useJsonSchema):
+                if use_json_schema:
                     errors = _check_data(required_params, param_types, required_files, request.data, request.FILES)
+                    errors.update(_check_data(header_required_params, header_param_types, header_required_files,
+                                              request.META, {}))
                 else:
                     errors = _check_data_nojs(required_params, param_types, required_files, request.data, request.FILES)
+                    errors.update(_check_data_nojs(header_required_params, header_param_types, header_required_files,
+                                                   request.META, {}))
                 if errors:
                     return JsonResponse({
                         consts.RESULT: consts.ERROR,
@@ -221,6 +231,9 @@ def rest_api(allowed_methods=None, params=None, useJsonSchema=True, no_result_on
 
                 for param in files:
                     result_params[param] = request.FILES.get(param, None)
+
+                for param in header_params:
+                    result_params[param] = request.META.get(param, None)
 
                 new_kwargs = kwargs.copy()
                 new_kwargs.update(result_params)
