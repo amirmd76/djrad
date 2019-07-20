@@ -1,3 +1,4 @@
+import collections
 from jsonschema import Draft4Validator, ErrorTree
 
 from djrad.consts import PROPERTIES, MISSED_KEYS
@@ -8,7 +9,7 @@ def get_schema(required_params, param_types):
     schema = {"type": "object", "required": required_params}
     properties = {}
     for key, value in param_types.items():
-        if value in ALLOWED_TYPES:
+        if isinstance(value, collections.Hashable) and value in ALLOWED_TYPES:
             properties[key] = ALLOWED_TYPES[value]
         else:
             properties[key] = value

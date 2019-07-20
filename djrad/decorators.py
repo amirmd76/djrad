@@ -1,5 +1,6 @@
 import json
 from functools import wraps
+import collections
 
 from django.http import JsonResponse, HttpResponse
 from django.utils.translation import ugettext_lazy as _
@@ -63,7 +64,7 @@ def _check_params(params, required_params, param_types):
             raise ValueError('keys of param_types should be a subset of params')
 
     for key, value in param_types.items():
-        if value not in types.ALLOWED_TYPES:
+        if not isinstance(value, collections.Hashable) or value not in types.ALLOWED_TYPES:
             validate_schema(value)
 
 
