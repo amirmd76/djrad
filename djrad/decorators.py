@@ -288,3 +288,82 @@ def json_rpc():
         return wrapped
 
     return func
+
+
+def rest_func(params=None, use_json_schema=True, no_result_on_success=False):
+    raw_params = params
+
+    params, files, required_params, param_types, required_files = _extract_params(raw_params)
+    if files or required_files:
+        raise Exception("rest function can't have files")
+
+    _check_params(params, required_params, param_types)
+
+    def func(f):
+        @wraps(f)
+        @csrf_exempt
+        def wrapped(data, *args, **kwargs):
+            try:
+                if not isinstance(data, dict):
+                    return {
+                        "status": 400,
+                        "response": {
+                            consts.ERROR: "data should be of type dict"
+                        },
+                    }
+                if use_json_schema:
+                    errors = _check_data(required_params, param_types, required_files, data, {})
+                else:
+                    errors = _check_data_nojs(required_params, param_types, required_files, data, {})
+                if errors:
+                    return {
+                        "status": 400,
+                        "response": {
+                            consts.RESULT: consts.ERROR,
+                            consts.ERROR: "data should be of type dict",
+                        },
+                    }
+
+                result_params = {}
+                for param in params:
+                    result_params[param] = data.get(param, None)
+
+                new_kwargs = kwargs.copy()
+                new_kwargs.update(result_params)
+
+                r = f(data, *args, **new_kwargs) or {}
+
+                if isinstance(r, HttpResponse):
+                    return r
+                result = r
+                if not no_result_on_success:
+                    result.update({consts.RESULT: consts.SUCCESS})
+                return {
+                    "status": 200,
+                    "response": result,
+                }
+
+            except APIException as api_exception:
+                return {
+                    "status": api_exception.status,
+                    "response": {
+                        consts.RESULT: consts.ERROR,
+                        consts.ERROR: {
+                            consts.CODE: api_exception.error_code,
+                            consts.MESSAGE: api_exception.message,
+                        },
+                    },
+                }
+
+            except APIValidationException as api_exception:
+                return {
+                    "status": api_exception.status,
+                    "response": {
+                        consts.RESULT: consts.ERROR,
+                        consts.ERROR: api_exception.error
+                    }
+                }
+
+        return wrapped
+
+    return func
