@@ -41,6 +41,8 @@ def _get_data(request):
                 data[k] = v[0]
             else:
                 data[k] = v
+    elif request.method == "PATCH":
+        data = json.loads(str(request.body, 'utf-8'))
     return data
 
 
